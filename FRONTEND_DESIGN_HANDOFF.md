@@ -325,3 +325,86 @@ successful production build.
 - Every destructive action confirms before executing.
 - Desktop and mobile layouts are responsive.
 - Frontend build, tests, and browser smoke test pass.
+
+## 2026-08-11 — Implemented Dependency, Installation, and CSS Reference
+
+This section is appended after the original design handoff so it does not change the original design guidance above. It describes the dependencies and styling that are actually present in the current `frontend-web` implementation.
+
+### Installed Runtime Dependencies
+
+| Package | Version in `package.json` | Why it is used | Where it is used |
+| --- | --- | --- | --- |
+| `react` | `^18.3.1` | Component rendering and hooks | All React screens in `src/` |
+| `react-dom` | `^18.3.1` | Browser DOM rendering | `src/main.tsx` |
+| `lucide-react` | `^0.468.0` | Accessible SVG icon components | `App.tsx`, `Login.tsx`, `ModuleScreen.tsx`, `ui.tsx`, `notifications.tsx`, and `ErrorBoundary.tsx` |
+| `typescript` | `latest` | Type checking and Vite TypeScript build | `tsconfig.json`, `npm run build`, and `npm exec -- tsc -b` |
+| `vite` | `latest` | Local development server and production bundler | `vite.config.ts`, `npm run dev`, and `npm run build` |
+
+### Installed Development Dependencies
+
+| Package | Version in `package.json` | Why it is used |
+| --- | --- | --- |
+| `@vitejs/plugin-react` | `latest` | Vite React transform and Fast Refresh support |
+| `@types/react` | `^18.3.12` | React TypeScript type definitions |
+| `@types/react-dom` | `^18.3.1` | React DOM TypeScript type definitions |
+| `prettier` | `^3.6.2` | Source formatting through `npm run format` and `.prettierrc.json` |
+
+### Installation State and Commands
+
+- `frontend-web/node_modules` and `frontend-web/package-lock.json` are present, so the declared package set has been installed locally.
+- Use `npm install` inside `frontend-web` to restore the exact lockfile-based dependency tree on another laptop.
+- Use `npm run dev` for the local Vite server, `npm exec -- tsc -b --pretty false` for the focused typecheck, and `npm run format` for Prettier formatting.
+- No global npm package is required for normal frontend work.
+
+### UI Library Decision: No shadcn/ui or Tailwind in the Current Build
+
+The current web app does **not** install or use `shadcn/ui`, Tailwind CSS, Radix UI, Material UI, Chakra UI, Bootstrap, React Hook Form, Zod, TanStack Query, TanStack Table, or Recharts.
+
+The earlier AI build prompt above names several of those packages as a future target architecture. They were not added to `package.json`, so a developer must not assume their components, utilities, hooks, form schemas, tables, charts, or generated shadcn files exist.
+
+The active implementation uses custom React components and handwritten CSS. This was chosen to keep the initial local application lightweight and to avoid introducing a design-system generator before the module API flows were connected. If shadcn/ui is adopted later, add it deliberately with Tailwind configuration and migrate one shared component at a time; do not mix generated shadcn styles blindly into the current global CSS.
+
+### Current CSS System
+
+| File | Purpose | Main usage |
+| --- | --- | --- |
+| `frontend-web/src/styles.css` | Main global visual system | App shell, sidebar, header, dashboard cards, tables, forms, modal base styles, typography, and desktop layout |
+| `frontend-web/src/ui.css` | Shared UX and responsive overrides | Toasts, offline banner, login page, error details, session restoration, module visibility, responsive navigation, responsive tables, and mobile modals |
+| `frontend-web/src/main.tsx` | CSS entry point | Imports `styles.css` first, then `ui.css`; later `ui.css` rules can intentionally override base styles |
+
+The CSS approach is plain global CSS with semantic class names such as `.app-shell`, `.sidebar`, `.content`, `.card`, `.primary`, `.secondary`, `.module-screen`, `.module-actions`, `.modal`, `.table-card`, `.toast`, and `.auth-loading`.
+
+There are no Tailwind utility classes, CSS Modules, Sass/Less files, CSS-in-JS libraries, styled-components, or theme-provider packages. Design consistency comes from the Deep Indigo and Slate color values, reusable class names, and the custom shared React components.
+
+### Custom Components Replacing a UI Kit
+
+| Component or pattern | File | Replaces the need for |
+| --- | --- | --- |
+| `FormInput` | `src/ui.tsx` | shadcn/Input or a form-library field wrapper |
+| `EmptyState` and `Skeleton` | `src/ui.tsx` | external empty/loading components |
+| `ConfirmDialog` | `src/ui.tsx` | dialog/modal library for confirmation flows |
+| `ToastRegion` and `toast` | `src/notifications.tsx` | toast/notification package |
+| `OfflineBanner` | `src/notifications.tsx` | external network-status component |
+| `ErrorBoundary` | `src/ErrorBoundary.tsx` | error boundary package |
+| `ModuleScreen` form and table engine | `src/ModuleScreen.tsx` | table/form library for current module workflows |
+
+### Current Gaps Before Adding More Dependencies
+
+- Generic forms still use local React state and several ID text fields; adopting React Hook Form plus Zod is a future improvement, not current behavior.
+- API caching, pagination invalidation, and optimistic updates are custom/manual; TanStack Query is not installed.
+- Tables use standard HTML tables with client-side text search; TanStack Table is not installed.
+- Analytics currently uses live metric cards/tables; Recharts is not installed.
+- The production Vite bundle needs local investigation because the bundling stage has stalled in the current environment even though TypeScript compilation passes.
+
+## 2026-08-11 — Full Frontend File Audit and Formatting Update
+
+This final appended section records the complete `frontend-web` audit requested after the dependency appendix.
+
+- Added `frontend-web/.env.example` with the local `VITE_API_URL` value. Copy it to `.env` only when a local override is needed; `.env` remains ignored by Git.
+- Restored the declared development dependencies with `npm install`, including the missing local Prettier executable.
+- Replaced the old hand-written React module shim in `src/shims.d.ts` with a CSS-only declaration. The old shim conflicted with installed `@types/react` and prevented `ErrorBoundary` from typechecking correctly.
+- Formatted every file under `src/` with Prettier, including TypeScript, TSX, declaration files, and CSS. Also formatted `index.html`, `package.json`, `tsconfig.json`, `vite.config.ts`, and `.prettierrc.json`.
+- Added `npm run typecheck` for the repeatable strict TypeScript check.
+- Expanded `npm run format` so future formatting covers TypeScript, TSX, CSS, declaration files, and key frontend configuration files.
+- Validation: `npm run format` completes with no remaining changes and `npm run typecheck` passes.
+- `npm install` reported one high-severity transitive dependency advisory. No automatic `npm audit fix` was run because it can change Vite or other dependency versions; review it separately before upgrading packages.

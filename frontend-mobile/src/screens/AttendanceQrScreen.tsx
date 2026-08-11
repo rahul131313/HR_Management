@@ -1,0 +1,3 @@
+import { useState } from 'react';
+import { Button, Text, View } from 'react-native';
+export function AttendanceQrScreen() { const [scanned, setScanned] = useState(false); return <View style={{ flex:1, justifyContent:'center', alignItems:'center', padding:24, gap:16 }}><Text style={{ fontSize:22, fontWeight:'700', color:'#0f172a' }}>Scan workplace QR</Text><Text style={{ textAlign:'center', color:'#64748b' }}>{scanned ? 'QR verified. Attendance is ready to submit.' : 'Point your camera at the workplace QR code.'}</Text><Button title={scanned ? 'Scan again' : 'Simulate scan'} onPress={() => setScanned(!scanned)} /></View>; }

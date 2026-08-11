@@ -1,0 +1,13 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hr-platform-api
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls: [{ hosts: [api.hr-platform.example.com], secretName: hr-platform-tls }]
+  rules:
+    - host: api.hr-platform.example.com
+      http:
+        paths: [{ path: /, pathType: Prefix, backend: { service: { name: hr-platform-api, port: { number: 80 } } } }]
