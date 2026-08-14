@@ -8,7 +8,7 @@ export type Employee = {
   jobTitle?: string;
   status: string;
 };
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api/v1';
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8082/api/v1';
 let accessToken: string | null = null;
 let refreshRequest: Promise<AuthSession> | null = null;
 
